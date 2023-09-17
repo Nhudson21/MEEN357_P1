@@ -69,3 +69,15 @@ Ng = get_gear_ratio(speed_reducer)
 def F_net(omega, terrain_angle, rover, planet, Crr):
     #to be cont.
     
+def F_drive(omega, rover):
+    import numpy as np
+    if isinstance(omega, (int, float, str)) and isinstance(omega, np.ndarray):
+        raise Exception("Array of motor shaft speed in not in correct form")
+    if isinstance(rover, dict)==False:
+        raise Exception("Data structure specifying rover parameters in not in correct form")
+    rad=float(rover['wheel_assembly']['wheel']['radius'])
+    tor_b=tau_dcmotor(omega,rover['wheel_assembly']['motor'])
+    Gear_rat=get_gear_ratio(rover['wheel_assembly']['speed_reducer'])
+    tor_aju=(tor_b/Gear_rat)
+    Fd=tor_aju/rad
+    return Fd
