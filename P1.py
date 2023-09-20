@@ -93,6 +93,8 @@ def F_gravity(terrain_angle, rover, planet):
     if Up:
         N=N*-1
     return N
+
+
 #returns magnitude of net force acting on rover in direction of translational motion
 def F_net(omega, terrain_angle, rover, planet, Crr):
     #to be cont.
