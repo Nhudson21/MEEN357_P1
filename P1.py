@@ -77,7 +77,22 @@ def get_gear_ratio(speed_reducer):
     
 Ng = get_gear_ratio(speed_reducer)
 #print(Ng)
-
+def F_gravity(terrain_angle, rover, planet):
+    import numpy as np
+    if terrain_angle>0:
+        Up=True
+    if isinstance(rover, dict)==False:
+        raise Exception("Data structure specifying rover parameters in not in correct form")
+    if isinstance(planet, dict)==False:
+        raise Exception("Data structure specifying planet parameters in not in correct form")
+    if terrain_angle/75 <-1 or terrain_angle/75 >1:
+        raise Exception ("The Some angles may be too large")
+    mass=get_mass(rover)
+    gravity=g_mars # probably in the dictionary for planet; change later if neeeded
+    N=mass*gravity*np.cos(abs(terrain_angle))
+    if Up:
+        N=N*-1
+    return N
 #returns magnitude of net force acting on rover in direction of translational motion
 def F_net(omega, terrain_angle, rover, planet, Crr):
     #to be cont.
