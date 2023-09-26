@@ -10,7 +10,6 @@ for i in range(381):
     om.append(x)
 
 omega = np.array(om)
-omega=omega/gear
 MST=subfunctions.tau_dcmotor(omega,rover['wheel_assembly']['motor'])
 MST=MST*gear
 pow=[]
