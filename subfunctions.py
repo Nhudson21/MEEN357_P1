@@ -17,27 +17,26 @@ def get_gear_ratio(speed_reducer):
     return Ng
 
 
-# print(Ng)
-
-
-# to be cont.
-
 # computes rolling ressitance in newtons acting in the direction of translation
 def F_rolling(omega, terrain_angle, rover, planet, Crr):
     import numpy as np
     import math
-    if (type(omega) != type(terrain_angle)) and np.iscalar(omega) and isinstance(omega, np.ndarray):
-        raise Exception("Sorry, omega and terrain_angle must be a vector or scalar of the same type")
-
-    if len(omega) != len(terrain_angle):
-        raise Exception("Sorry omega and terrain_angle must be the same size")
-    if np.any((terrain_angle < -75) | (terrain_angle > 75)):
-        raise Exception(
-            "Sorry all values of terrain_angle must be greater than or equal to -75 and less than or equal to 75")
-    if type(rover) != dict or type(planet) != dict:
-        raise Exception("Sorry both rover and planet must be a dict")
-    if np.isscalar(Crr) == False and Crr <= 0:
-        raise Exception("Sorry crr must be both scalar and posistive")
+    if isinstance(terrain_angle,float) == False:
+        if(any(terrain_angle/75) < -1 or any(terrain_angle/75)<1 ):
+             raise Exception("Elements of terrain_angle must be between -75 and +75 degrees")
+    if isinstance(terrain_angle,(float,int)) == True:
+        if((terrain_angle)/75 < -1 or (terrain_angle)/75 <1):
+             raise Exception("Elements of terrain_angle must be between -75 and +75 degrees")
+    flt=False
+    if isinstance(terrain_angle, float) == True and isinstance(omega, float):
+        flt=True
+    if flt==False and isinstance(terrain_angle, float) ==False and isinstance(omega, float)==False:
+        if (omega.size!=terrain_angle.size):
+            raise Exception("Omega and Terrain_angle must be scalars or 1-dimensional vectors of the same size")
+    if not isinstance(rover, dict) or not isinstance(planet, dict):
+        raise Exception("rover and planet must be dictionaries")
+    if not isinstance(Crr, (int, float)) or Crr <= 0:
+        raise Exception("Crr must be a positive scalar")
     frr=[]
 # gets the value for g from the planet dict
     g = float(planet.get('g'))
@@ -48,12 +47,22 @@ def F_rolling(omega, terrain_angle, rover, planet, Crr):
 # calculates the velocity of the rover
     v_rover = 2 * math.pi * rad * (omega / Ng)
 # calculates the simplified vlaue for rolling resistance
-    for x in range((v_rover.size)):
-       b= (m * g * math.cos(math.radians(terrain_angle[x]))) * Crr*math.erf(40 *v_rover[x])
-       frr.append(b)
-    Frr=np.array(frr)
-    return Frr
-
+    if isinstance(v_rover, float)==True:
+        for x in range((terrain_angle.size)):
+            b = (m * g * math.cos(math.radians(terrain_angle[x]))) * Crr * math.erf(40 * v_rover)
+            frr.append(b)
+        Fr = np.array(frr)
+    elif isinstance(terrain_angle, float)==True:
+        for x in range((v_rover.size)):
+            b = (m * g * math.cos(math.radians(terrain_angle))) * Crr * math.erf(40 * v_rover[x])
+            frr.append(b)
+        Fr = np.array(frr)
+    else:
+        for x in range((v_rover.size)):
+            b= (m * g * math.cos(math.radians(terrain_angle[x]))) * Crr*math.erf(40 *v_rover[x])
+            frr.append(b)
+        Fr=np.array(frr)
+    return Fr
 def F_gravity(terrain_angle, rover, planet):
     import numpy as np
     import math
@@ -62,8 +71,12 @@ def F_gravity(terrain_angle, rover, planet):
         raise Exception("Data structure specifying rover parameters in not in correct form")
     if isinstance(planet, dict) == False:
         raise Exception("Data structure specifying planet parameters in not in correct form")
-    if any(terrain_angle) / 75 < -1 or any(terrain_angle) / 75 > 1:
-        raise Exception("The some angles may be too large")
+    if isinstance(terrain_angle,float) == False:
+        if(any(terrain_angle/75) < -1 or any(terrain_angle/75)<1 ):
+             raise Exception("The some numpy angles may be too large")
+    if isinstance(terrain_angle,(float,int)) == True:
+        if((terrain_angle)/75 < -1 or (terrain_angle)/75 <1):
+             raise Exception("The some float angles may be too large")
     mass = get_mass(rover)
     gravity = float(planet['g'])
     for i in terrain_angle:
@@ -78,21 +91,27 @@ def tau_dcmotor(omega, motor):
         raise Exception("Array of motor shaft speed is not in the correct form")
     if not isinstance(motor, dict):
         raise Exception("Data structure specifying rover parameters is not in the correct form")
-
     # Get values from the motor dict and convert to variables with the same name
     torque_stall = float(motor.get('torque_stall'))
     speed_noload = float(motor.get('speed_noload'))
     torque_noload = float(motor.get('torque_noload'))
-    omega = omega.tolist()
-    tau = np.array([])
-
-    for i in range(len(omega)):
-        if omega[i] >= speed_noload:
-            tau = np.append(tau, [0])
-        elif omega[i] < 0:
-            tau = np.append(tau, [torque_stall])
+    if isinstance(omega, float) ==False:
+        omega = omega.tolist()
+        tau = np.array([])
+        for i in range(len(omega)):
+            if omega[i] >= speed_noload:
+                tau = np.append(tau, [0])
+            elif omega[i] < 0:
+                tau = np.append(tau, [torque_stall])
+            else:
+                tau = np.append(tau, [torque_stall - ((torque_stall - torque_noload) / speed_noload) * omega[i]])
+    else:
+        if omega >= speed_noload:
+            tau = 0
+        elif omega < 0:
+            tau = torque_stall
         else:
-            tau = np.append(tau, [torque_stall - ((torque_stall - torque_noload) / speed_noload) * omega[i]])
+            tau = (torque_stall - ((torque_stall - torque_noload) / speed_noload) * omega)
     return tau
 
 def F_drive(omega, rover):
@@ -103,6 +122,7 @@ def F_drive(omega, rover):
         raise Exception("Data structure specifying rover parameters in not in correct form")
     rad = float(rover['wheel_assembly']['wheel']['radius'])
     tor_b = tau_dcmotor(omega, rover['wheel_assembly']['motor'])
+
     Gear_rat = get_gear_ratio(rover['wheel_assembly']['speed_reducer'])
     Fd = (tor_b / rad)*Gear_rat*6
     return Fd
@@ -113,11 +133,10 @@ def F_net(omega, terrain_angle, rover, planet, Crr):
     if (type(omega) != type(terrain_angle)) and np.iscalar(omega) and isinstance(omega, np.ndarray):
         raise Exception("Sorry, omega and terrain_angle must be a vector or scalar of the same type")
 
-    if len(omega) != len(terrain_angle):
+    if (omega.size) != (terrain_angle.size):
         raise Exception("Sorry omega and terrain_angle must be the same size")
     if np.any((terrain_angle < -75) | (terrain_angle > 75)):
-        raise Exception(
-            "Sorry all values of terrain_angle must be greater than or equal to -75 and less than or equal to 75")
+        raise Exception( "Sorry all values of terrain_angle must be greater than or equal to -75 and less than or equal to 75")
     if type(rover) != dict or type(planet) != dict:
         raise Exception("Sorry both rover and planet must be a dict")
     if np.isscalar(Crr) == False and Crr <= 0:
@@ -126,10 +145,11 @@ def F_net(omega, terrain_angle, rover, planet, Crr):
         # Fnet = Fgrav + Frr - Fd
         big= []
         grav=F_gravity(terrain_angle, rover, planet)
+
         roll=F_rolling(omega, terrain_angle, rover, planet,Crr)
         drive=F_drive(omega, rover)
         for x in range(grav.size):
             a=grav[x] -(roll[x])+ drive[x]
             big.append(a)
         net = np.array(big)
-        return net
+    return net
