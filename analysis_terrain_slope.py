@@ -24,7 +24,7 @@ def myfun(x,place):
     x = subfunctions.F_gravity(slope_list_deg, rover, planet)[place]
     y = subfunctions.F_drive(omega_st, rover)[place]
     z = subfunctions.F_rolling(omega_st, slope_list_deg, rover, planet, Crr)[place]
-    return y
+    return x+y-z
 
 def bisection(lb,xu,err_max,pl):
     big=[]
