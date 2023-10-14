@@ -153,3 +153,23 @@ def F_net(omega, terrain_angle, rover, planet, Crr):
             big.append(a)
         net = np.array(big)
     return net
+    
+def motorW(v, rover):
+    import numpy as np
+    notfloat = False
+    if type(rover) != dict:
+        raise Exception(" Rover must be a dictionary type")
+    if type(v) != float and type(v) != int:
+        notfloat=True
+    if isinstance(v, np.ndarray)==False and notfloat==False:
+        raise Exception("The first input must be a float,int or numpy array")
+    radius = float(rover['wheel_assembly']['wheel']['radius'])
+    if type(v) == float:
+        w=v/radius
+    else:
+        final=[]
+        for i in v:
+            b=i/radius
+            final.append(b)
+        w = np.array(final)
+    return w
