@@ -173,3 +173,18 @@ def motorW(v, rover):
             final.append(b)
         w = np.array(final)
     return w
+def rover_dynamics(t, y, rover, planet, experiment):
+    from scipy.integrate import odeint
+    from scipy.interpolate import interp1d
+    interp_function = interp1d(experiment['alpha_dist'], experiment['alpha_deg'], kind='linear')
+    t_span = [0, t]
+    omega=motorW(y[0])
+    Crr=experiment['Crr']
+    t_angle=interp_function(y[1])
+    force = F_net(omega,t_angle,rover,planet,Crr)
+    mass = get_mass(rover)
+    solution = odeint(lambda y, t: [y[1], force / mass], y, t_span)
+    x_at_t = solution[1][0]  # Position at time t
+    v_at_t = solution[1][1]  # Velocity at time t
+    dydt = [ v_at_t,x_at_t]
+    return dydt
