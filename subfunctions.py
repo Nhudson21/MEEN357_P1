@@ -161,15 +161,16 @@ def motorW(v, rover):
         raise Exception(" Rover must be a dictionary type")
     if type(v) != float and type(v) != int:
         notfloat=True
-    if isinstance(v, np.ndarray)==False and notfloat==False:
+        print("here")
+    if isinstance(v, np.ndarray)==False and notfloat==True:
         raise Exception("The first input must be a float,int or numpy array")
     radius = float(rover['wheel_assembly']['wheel']['radius'])
     if type(v) == float:
-        w=v/radius
+        w=v/radius*get_gear_ratio(rover['wheel_assembly']['speed_reducer'])
     else:
         final=[]
         for i in v:
-            b=i/radius
+            b=i/radius*get_gear_ratio(rover['wheel_assembly']['speed_reducer'])
             final.append(b)
         w = np.array(final)
     return w
